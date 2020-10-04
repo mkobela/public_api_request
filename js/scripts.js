@@ -101,6 +101,9 @@ function createModalHTML(person){
 
   const loc = person.location;
 
+  const phone = formatPhone(person.phone);
+  const dob = formatBirthdate(person.dob.date);
+
   const personHTML = `
   <div class="modal-container">
       <div class="modal">
@@ -111,9 +114,9 @@ function createModalHTML(person){
               <p class="modal-text">${person.email}</p>
               <p class="modal-text cap">${person.location.city}</p>
               <hr>
-              <p class="modal-text">${person.phone}</p>
+              <p class="modal-text">${phone}</p>
               <p class="modal-text">${loc.street.number} ${loc.street.name} ${loc.city}, ${loc.state} ${loc.postcode}</p>
-              <p class="modal-text">Birthday: ${person.dob.date}</p>
+              <p class="modal-text">Birthday: ${dob}</p>
           </div>
       </div>
   </div>
@@ -128,6 +131,37 @@ function createModalHTML(person){
     // remove modal when x button clicked
     const modalElement = document.querySelector('.modal-container').remove();
   });
+}
+
+/***
+ * @function formatPhone
+ * @property {string} phone - phone number
+ * @returns {string}
+***/
+function formatPhone(phone){
+  // format phone to (XXX) XXX-XXXX
+  if(phone.length >= 14){
+    const formattedPhone = phone.substring(0, 5) + " " + phone.substring(6,15);
+    return formattedPhone;
+  }else {
+    // string not long enough
+    return phone;
+  }
+}
+ 
+/***
+ * @function formatBirthday
+ * @property {string} dob - date of birth
+ * @returns {string}
+***/
+function formatBirthdate(dob){
+  // convert JSON string to date
+  const date = new Date(dob);
+
+  // format to MM/DD/YYYY
+  const formattedDate = `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
+
+  return formattedDate;
 }
 
 /***
