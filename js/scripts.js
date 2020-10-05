@@ -7,8 +7,9 @@ Treehouse FSJS Techdegree:
 Project 5 - Public API Request
 ******************************************/
 
-// person array from fetch
+// store results from fetch
 let personArray = null;
+let filteredPersonArray = null;
 
 /***
  * @function checkStatus
@@ -56,11 +57,13 @@ function errorHandler(error){
  * @property {Error} error - error object
 ***/
 function createHTML(data){
-  // store date for modal displays
-  personArray = data;
 
+  const galleryElement = document.getElementById('gallery');
+  galleryElement.innerHTML = "";
+  
   // iterate for each person in array
-  data.results.map((item, index) => createPersonHTML(item, index));
+  data.map((item, index) => createPersonHTML(item, index));
+
 }
 
 /***
@@ -85,45 +88,32 @@ function createPersonHTML(person, index){
   `;
 
   // add person to the end of div
-  document.getElementById('gallery').insertAdjacentHTML('beforeend', personItem);
+  const galleryElement = document.getElementById('gallery');
+  galleryElement.insertAdjacentHTML('beforeend', personItem);
   
   // add event handler for modal popup
   const selector = `div[position="${index}"]`;
   document.querySelector(selector).addEventListener('click', showModal)
 }
 
-
 /***
  * @function createModalHTML
  * @property {object} person - person object
 ***/
-function createModalHTML(person){
+function createModalHTML(position){
+
+  // get selected person
+  const person = filteredPersonArray[position];
+  var currentPosition = position;
 
   const loc = person.location;
-
   const phone = formatPhone(person.phone);
   const dob = formatBirthdate(person.dob.date);
 
-  const personHTML = `
-  <div class="modal-container">
-      <div class="modal">
-          <button type="button" id="modal-close-btn" class="modal-close-btn"><strong>X</strong></button>
-          <div class="modal-info-container">
-              <img class="modal-img" src="${person.picture.medium}" alt="profile picture">
-              <h3 id="name" class="modal-name cap">${person.name.first} ${person.name.last}</h3>
-              <p class="modal-text">${person.email}</p>
-              <p class="modal-text cap">${person.location.city}</p>
-              <hr>
-              <p class="modal-text">${phone}</p>
-              <p class="modal-text">${loc.street.number} ${loc.street.name} ${loc.city}, ${loc.state} ${loc.postcode}</p>
-              <p class="modal-text">Birthday: ${dob}</p>
-          </div>
-      </div>
-  </div>
-  `;
-
+  const personModalHTML = createModalPersonHTML(person, true);
+  
   // insert modal popup after the gallery
-  document.getElementById('gallery').insertAdjacentHTML('afterEnd', personHTML);
+  document.getElementById('gallery').insertAdjacentHTML('afterEnd', personModalHTML);
 
   // add listener for click on close button
   const buttonElement = document.querySelector('#modal-close-btn');
@@ -131,6 +121,135 @@ function createModalHTML(person){
     // remove modal when x button clicked
     const modalElement = document.querySelector('.modal-container').remove();
   });
+
+  // add listener for prev button
+  const previousElement = document.querySelector('#modal-prev');
+  previousElement.addEventListener('click', (e) => {
+    // previous was clicked
+    currentPosition = updateModalPerson(currentPosition, false);
+  });
+
+  // add listener for next button
+  const nextElement = document.querySelector('#modal-next');
+  nextElement.addEventListener('click', (e) => {
+    // next was clicked
+    currentPosition = updateModalPerson(currentPosition, true);
+  });
+
+  // show/hide nave buttons
+  displayNavButtons(currentPosition);
+}
+
+/***
+ * @function updateModalPerson
+ * @property {number} currentPosition - current position in array
+ * @returns {number} new current position
+***/
+function updateModalPerson(currentPosition, isNext){
+  let person = null;
+
+  // set new position
+  if(isNext){
+    if(currentPosition < filteredPersonArray.length){
+      currentPosition += 1;
+      person = filteredPersonArray[currentPosition];
+    }
+  }else{
+    if(currentPosition > 0){
+      currentPosition -= 1;
+      person = filteredPersonArray[currentPosition];
+    }
+  }
+
+  // hide next previous buttons as necessary
+  displayNavButtons(currentPosition);
+
+  if( person != null){
+    const html = createModalPersonHTML(person, false);
+    document.querySelector('.modal-info-container').innerHTML = "";
+    document.querySelector('.modal-info-container').insertAdjacentHTML('beforeend', html);
+  }
+
+  return currentPosition;
+}
+
+/***
+ * @function displayNavButtons
+ * @property {number} position - current position in array
+***/
+function displayNavButtons(position){
+  var prevDisplay = 'none';
+  var nextDisplay = 'none';
+
+  if(filteredPersonArray.length > 1){
+
+    if(position < filteredPersonArray.length-1){
+      // show next
+      nextDisplay = 'block';
+    }
+    
+    if (position > 0){
+      // show previous
+      prevDisplay = 'block';
+    }
+  }
+
+  document.getElementById("modal-next").style.display = nextDisplay;
+  document.getElementById("modal-prev").style.display = prevDisplay;
+}
+
+/***
+ * @function createModalPersonHTML
+ * @property {object} person - current position in array
+ * @property {boolean} includeContainer - should the html have outer div
+ * @returns {string} html string
+***/
+function createModalPersonHTML(person, includeContainer){
+
+  const loc = person.location;
+  const phone = formatPhone(person.phone);
+  const dob = formatBirthdate(person.dob.date);
+
+  let modalPersonHTML = '';
+  
+  // include outer conatiner if necessary
+  if(includeContainer){
+    modalPersonHTML = `<div class="modal-container">
+      <div class="modal">
+        <button type="button" id="modal-close-btn" class="modal-close-btn"><strong>X</strong></button>
+        <div class="modal-info-container">
+      `;
+  }
+  
+  // add the person data
+  modalPersonHTML += 
+    `
+        <img class="modal-img" src="${person.picture.medium}" alt="profile picture">
+        <h3 id="name" class="modal-name cap">${person.name.first} ${person.name.last}</h3>
+        <p class="modal-text">${person.email}</p>
+        <p class="modal-text cap">${person.location.city}</p>
+        <hr>
+        <p class="modal-text">${phone}</p>
+        <p class="modal-text">${loc.street.number} ${loc.street.name} ${loc.city}, ${loc.state} ${loc.postcode}</p>
+        <p class="modal-text">Birthday: ${dob}</p>
+  `;
+
+  // finialize the outer div if necessary
+  if(includeContainer){
+    modalPersonHTML += 
+    `     
+        </div>
+        </div>
+        <div class="modal-btn-container">
+          <button type="button" id="modal-prev" class="modal-prev btn">Prev</button>
+          <button type="button" id="modal-next" class="modal-next btn">Next</button>
+        </div>
+    </div>
+    `;
+  }
+
+  return modalPersonHTML;
+
 }
 
 /***
@@ -173,9 +292,45 @@ function showModal(e){
   const position = parseInt(e.currentTarget.getAttribute('position'));
 
   // show modal for requested person
-  createModalHTML(personArray.results[position]);
+  createModalHTML(position);
 }
 
-// Start of program, request data on each refresh
+/***
+ * @function addSearchForm - add search form to HTML
+***/
+function addSearchForm(){
+  const searchContainer = document.querySelector('.search-container');
+
+  const searchHTML = `
+    <form action="#" method="get">
+        <input type="search" id="search-input" class="search-input" placeholder="Search...">
+        <input type="submit" value="&#x1F50D;" id="search-submit" class="search-submit">
+    </form>`;
+
+    searchContainer.innerHTML = searchHTML;
+    searchContainer.addEventListener('input', (e) => {
+
+      filteredPersonArray = personArray.filter(person => {
+        const fullName = person.name.first + ' ' + person.name.last;
+
+        if( fullName.toLowerCase().includes(e.target.value.toLowerCase())){
+          return true;
+        }
+        return false;
+      });
+
+      createHTML(filteredPersonArray);
+    });
+
+}
+
+// Start of program
+addSearchForm();
+
+
+//request data on each refresh
 fetchData('https://randomuser.me/api/?page=1&results=12&nat=us')
-  .then(data => { createHTML(data) })
+  .then(data => { personArray = data.results;
+                  filteredPersonArray = personArray;
+                  return createHTML(personArray); 
+                });
